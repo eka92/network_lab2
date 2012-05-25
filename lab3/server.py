@@ -1,96 +1,45 @@
-# encoding: utf-8
+# coding: utf-8
+from socket import *
+"""
+  Самый простой способ организации однопользовательской игры
 
-import socket
-import random
-import select
+"""
+secret = 42
+my_socket = socket(AF_INET, SOCK_STREAM)
+my_socket.bind(('',8000))
 
+try:
+  my_socket.listen(5)
+except Exception, e:
+  print e
+  exit()
 
-class game_server(object):
-  """
-  game Server.
-  """
-  MAX_CLIENT = 50
-  DEBUG = True
-  
-  def geretate_digit(self, secret=100):
-    self.secret = random.randint(1, secret)
-    if self.DEBUG: print "game_server:geretate_digit -> self.secret %d" % self.secret
-    return self.secret
+not_game = False
+client, addr = my_socket.accept()
+print "connect from %s" % str(addr)
+while not not_game:
+  data = client.recv(1023) #name
+  print "Client name is %s" % data
+  client.send("OK")
 
-  def __init__(self, port=8000):
-    self.port = port
-    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self.socket.bind(('',self.port))
-    self.socket.listen(self.MAX_CLIENT)
-    if self.DEBUG: print "game_server:__init__ -> isGood!"
-    
-  def loop(self):
-    count_round = 0
-    
-    while True:
-      count_round += 1
-      print "round %d" % count_round
-      self.geretate_digit(100)
-      if self.DEBUG: print "loop->secret: %d" % self.secret
-      is_win = False
-      is_dirty = 0
-      clients = []
-      listen =[self.socket]
+  end_round =  False
+  while not end_round:
+    data = client.recv(1024)
+    print "RAW DATA ", data
+    data = int(data)
+    print "INT DATA ", data
+    if  data > secret:
+      report = ">"
+    elif data < secret:
+      report = "<"
+    else:
+      report = "="
+      end_round = True
 
-      while not is_win:
-        print "is_dirty: %d" % is_dirty
-        r,w,e = select.select(listen, [], [], 1)
-        for i in r:
-          if i == self.socket:
-            clients.append(client(i))
-            print "connect client "
-          else:
-            pass
-        
-        if self.DEBUG: print "clients"; print clients
-        for user in clients:
-          user.accept()
-          you_answer = user.recv()
-          print "client answer: %d" % (you_answer)
-          if self.secret == you_answer:
-            #WIN
-            is_win = True
-            result = "you Win"
-            print "win %d" % user
-            for cl in users:
-              # cl.send("game over.")
-              cl.close()
-          else:
-            result = "Than less" if self.secret > you_answer else "Than bigger"
-          
-          if self.DEBUG: print "user - result %s" % (result)
-          user.sendall(result)
-          
-          if not is_win: is_dirty += 1
+    client.send(report)
 
 
-
-class client(object):
-  """docstring for client"""
-  DEBUG = True
-  def __init__(self, socket, name=1):
-    self.name = name
-    self.socket = socket
-    if self.DEBUG: print "client.__init__ - true"
-  
-  def accept(self):
-    self.socket.accept()
-
-  def send(self, data):
-    data = str(data)
-    if self.DEBUG: print "client.send(%s)" % data
-    self.socket.send(data)
-
-  def recv(self):
-    self.data = int(self.socket.recv(1024))
-    if self.DEBUG: print "%s = client.recv()" % self.data
-    return self.data
-
-
-server = game_server()
-server.loop()
+  print "end round"
+  not_game =  True
+  client.close()
+my_socket.close()

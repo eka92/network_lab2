@@ -1,19 +1,34 @@
-import socket
+# coding: utf-8
+from socket import *
+im random
+"""
+  Самый простой способ организации одноклиенской игры
 
-class client():
-  def __init__(self, port=8000, addres='localhost'):
-    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self.addres = addres
-    self.port = port
-    self.socket.connect((addres,port))
+"""
 
-  def check(self, digit):
-    self.socket.send(digit)
-    result = self.socket.recv(1024)
+client_socket = socket(AF_INET, SOCK_STREAM)
+try:
+  client_socket.connect(('localhost',8000))
+except Exception, e:
+  print e
+  exit()
+client_socket.send("Clien1")
+print "connected"
+data = client_socket.recv(1023)
+if data == "OK":
+  print "OK"
+# data = raw_input("value: ")
+# data = str(int(data))
+# data = str(42)
+result = ">"
+
+while result != "=":
+    # data = str(random.randint(0,50))
+    data = raw_input("you VARIANT: ")
+    data = str(int(data))
+    print "VARIANT:", data
+    client_socket.send(data)
+    result = client_socket.recv(1023)
     print result
 
-  def delete(self):
-    self.socket.close()
-    
-me = client()
-me.check("90")
+client_socket.close()
